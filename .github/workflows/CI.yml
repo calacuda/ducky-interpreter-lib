@@ -10,7 +10,8 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - 'v*'
+      - 'V*'
   pull_request:
   workflow_dispatch:
 
@@ -40,6 +41,12 @@ jobs:
         with:
           name: wheels
           path: dist
+      - name: Release with Notes
+        uses: softprops/action-gh-release@v1
+        with:
+          files: wheels
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
   windows:
     runs-on: windows-latest
