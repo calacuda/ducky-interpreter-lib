@@ -24,10 +24,10 @@ jobs:
     strategy:
       matrix:
         target: [x86_64, x86, aarch64, armv7, s390x, ppc64le]
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
-        permissions:
-          contents: write
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
