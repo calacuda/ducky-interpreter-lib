@@ -12,3 +12,5 @@ log = "0.4.22"
 pest = { version = "2.7.12", features = ["pretty-print"] }
 pest_derive = "2.7.12"
 serde = { version = "1.0.210", features = ["derive"] }
+serde_cbor = "0.11.2"
+serialport = "4.5.0"

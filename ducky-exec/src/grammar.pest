@@ -3,51 +3,46 @@ NEWLINE = _{ "\n" | "\r\n" }
 
 text = { (!NEWLINE ~ ANY)+ }
 single_line_rem = _{ ^"REM" ~ !"_" ~ text}
-rem_line = { text }
+// rem_line = { text }
 rem_block_start = _{ ^"REM_BLOCK" }
 rem_block_end = _{ ^"END_REM" }
 multi_line_rem = _{ rem_block_start ~ NEWLINE ~ (!rem_block_end ~ (WHITESPACE? ~ text ~ NEWLINE+))+ ~ rem_block_end }
 REM = { multi_line_rem | single_line_rem }
 
-string_start = _{ ^"STRING" }
-STRING = { string_start ~ WHITESPACE* ~ text }
+// string_start = _{ ^"STRING" }
+STRING = { ^"STRING" ~ WHITESPACE* ~ text }
 
-stringln_start = _{ ^"STRINGLN" }
+// stringln_start = _{ ^"STRINGLN" }
 STRINGLN = { ^"STRINGLN" ~ WHITESPACE* ~ text }
 
-string_end = _{ ^"END_STRING" }
-STRING_BLOCK = { string_start ~ NEWLINE ~ (!string_end ~ (WHITESPACE? ~ text ~ NEWLINE+))+ ~ string_end }
+// string_end = _{ ^"END_STRING" }
+STRING_BLOCK = { ^"STRING" ~ NEWLINE ~ (!^"END_STRING" ~ (WHITESPACE? ~ text ~ NEWLINE+))+ ~ ^"END_STRING" }
 
-stringln_start_block = _{ ^"STRINGLN" ~ NEWLINE }
-stringln_end = _{ ^"END_STRINGLN" }
-STRINGLN_BLOCK = { stringln_start ~ NEWLINE ~ (!stringln_end ~ (WHITESPACE? ~ text ~ NEWLINE+))+ ~ stringln_end } 
+// stringln_start_block = _{ ^"STRINGLN" ~ NEWLINE }
+// stringln_end = _{ ^"END_STRINGLN" }
+STRINGLN_BLOCK = { ^"STRINGLN" ~ NEWLINE ~ (!^"END_STRINGLN" ~ (WHITESPACE? ~ text ~ NEWLINE+))+ ~ ^"END_STRINGLN" } 
 
-UP = { "UP" }
-DOWN = { "DOWN" }
-LEFT = { "LEFT" }
-RIGHT = { "RIGHT" }
-UPARROW = { "UPARROW" }
-DOWNARROW = { "DOWNARROW" }
-LEFTARROW = { "LEFTARROW" }
-RIGHTARROW = { "RIGHTARROW" }
+UP = { "UPARROW" | "UP" }
+DOWN = { "DOWNARROW" | "DOWN" }
+LEFT = { "LEFTARROW" | "LEFT" }
+RIGHT = { "RIGHTARROW" | "RIGHT" }
 PAGEUP = { "PAGEUP" }
 PAGEDOWN = { "PAGEDOWN" }
 HOME = { "HOME" }
 END = { "END" ~ (!"_" ~ (WHITESPACE | NEWLINE)?) }
 INSERT = { "INSERT" }
-DELETE = { "DELETE" }
-DEL = { "DEL" }
+DELETE = { "DELETE" | "DEL" }
 BACKSPACE = { "BACKSPACE" }
 TAB = { "TAB" }
 SPACE = { "SPACE" }
 
-cursor_keys = _{ UP | DOWN | LEFT | RIGHT | UPARROW | DOWNARROW | LEFTARROW | RIGHTARROW | PAGEUP | PAGEDOWN | HOME | END | INSERT | DELETE | DEL | BACKSPACE | TAB | SPACE }
+cursor_keys = _{ UP | DOWN | LEFT | RIGHT | PAGEUP | PAGEDOWN | HOME | END | INSERT | DELETE | BACKSPACE | TAB | SPACE }
 
 ENTER = { "ENTER" }
 ESCAPE = { "ESCAPE" }
 PAUSE_BREAK = { "PAUSE BREAK" }
 PRINTSCREEN = { "PRINTSCREEN" }
-MENU_APP = { "MENU APP" }
+MENU_APP = { "MENU" | "APP" }
 F1 = { "F1" }
 F2 = { "F2" }
 F3 = { "F3" }
@@ -71,16 +66,16 @@ WINDOWS = { "WINDOWS" | "GUI" }
 
 modifier = _{ SHIFT | ALT | CONTROL | COMMAND | WINDOWS }
 
-key_mod_compbo = { modifier ~ (((modifier | sys_mods | cursor_keys) ~ WHITESPACE) | text)+ }
+key_mod_compbo = { modifier ~ (((modifier | sys_mods | cursor_keys) ~ (WHITESPACE | &NEWLINE | &EOI )) | text)+ }
 
-INJECT_KW = { "INJECT_MOD" }
+INJECT_KW = _{ "INJECT_MOD" }
 INJECT_MOD = { INJECT_KW ~ modifier }
 
 CAPS_LOCK = { "CAPS_LOCK" }
 NUM_LOCK = { "NUM_LOCK" }
-SCROLLOCK = { "SCROLLOCK" }
+SCROLLLOCK = { "SCROLLLOCK" }
 
-LOCK_KEYS = { CAPS_LOCK | NUM_LOCK | SCROLLOCK }
+LOCK_KEYS = _{ CAPS_LOCK | NUM_LOCK | SCROLLLOCK }
 
 DELAY_KW = _{ "DELAY" }
 DELAY_ARG = { ASCII_DIGIT+ }
@@ -91,8 +86,6 @@ LED_R = { "LED_R" }
 LED_G = { "LED_G" }
 
 // LED = { LED_OFF | LED_G | LED_R }~ (PEEK ~ !(PEEK ~ ANY))*
-
-eoi = _{ EOI | "" }
 
 // SCRIPT = _ { SOI ~ ((DELAY | key_mod_compbo | STRING_BLOCK |~ (PEEK ~ !(PEEK ~ ANY))* STRINGLN_BLOCK | STRING | STRINGLN) | ((LED | LOCK_KEYS | cursor_keys | REM) ~ NEWLINE?))+ ~ EOI }
 // commands = { ((LED | LOCK_KEYS | cursor_keys | STRING_BLOCK | STRINGLN_BLOCK | REM) ~ NEWLINE?) | EOI) | ((DELAY | key_mod_compbo | STRING | STRINGLN) ~ EOI) }
