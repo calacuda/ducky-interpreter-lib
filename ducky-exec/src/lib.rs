@@ -59,6 +59,8 @@ pub fn logger_init() {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::mpsc::channel;
+
     use super::*;
     use ast::DuckyScript;
     use pest::Parser;
@@ -94,8 +96,9 @@ mod tests {
 
     #[test]
     fn output_test() {
+        let (tx, _rx) = channel();
         let res =
-            DuckyScript::new("/dev/not-a-tty").from_source("\nSTRINGLN\n\tline1\nEND_STRINGLN");
+            DuckyScript::new("/dev/not-a-tty", tx).from_source("\nSTRINGLN\n\tline1\nEND_STRINGLN");
         // parse("\nSTRINGLN\nline1\nEND_STRINGLN\n", 1);
         assert!(res.is_ok(), "parsing script resulted in an error: {res:?}");
 

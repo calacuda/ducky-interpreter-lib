@@ -6,22 +6,29 @@ use pest::{
     Parser,
 };
 use serialport::SerialPortBuilder;
-use std::{io::Write, thread::sleep, time::Duration};
+use std::{io::Write, sync::mpsc::Sender, thread::sleep, time::Duration};
 
 pub type Result = anyhow::Result<()>;
 
-#[derive(Debug, Clone, PartialEq, Eq, pest_derive::Parser)]
+pub enum ParserEvents {
+    Done(Result),
+    Line(usize),
+}
+
+#[derive(Debug, Clone, pest_derive::Parser)]
 #[grammar = "grammar.pest"]
 pub struct DuckyScript {
     port: SerialPortBuilder,
-    pub line: usize,
+    // pub line: Arc<Mutex<usize>>,
+    event: Sender<ParserEvents>,
 }
 
 impl DuckyScript {
-    pub fn new(port_adr: &str) -> Self {
+    pub fn new(port_adr: &str, event: Sender<ParserEvents>) -> Self {
         Self {
             port: serialport::new(port_adr, 115200),
-            line: 0,
+            // line: Arc::new(Mutex::new(0)),
+            event,
         }
     }
 
@@ -38,30 +45,34 @@ impl DuckyScript {
         Ok(script?.len() - 1)
     }
 
-    pub fn from_source(&mut self, source: &str) -> Result {
+    pub fn from_source(&self, source: &str) -> Result {
         trace!("Compiling the source: {:?}", source);
         let script = Self::parse(Rule::SCRIPT, source);
         trace!("script => {:?}", script);
         self.exec(script?)
     }
 
-    fn exec(&mut self, script: Pairs<Rule>) -> Result {
-        // NOTE: I could make this handle everything with no healper functions by making it recurse
-        // on line.into_inner(), how ever this would be significantly more unreadable.
+    fn exec(&self, script: Pairs<Rule>) -> Result {
         for line in script {
             if line.as_rule() == Rule::EOI {
                 break;
             } else {
-                self.line = line.line_col().0
+                // let mut counter = self.line.lock().unwrap();
+                // *counter = line.line_col().0
+                self.event.send(ParserEvents::Line(line.line_col().0))?;
             }
 
-            self.handle_rule(line)?;
+            if let Err(e) = self.handle_rule(line) {
+                self.event.send(ParserEvents::Done(Err(e)))?;
+                return Ok(());
+            }
         }
 
+        self.event.send(ParserEvents::Done(Ok(())))?;
         Ok(())
     }
 
-    fn handle_rule(&mut self, rule: Pair<Rule>) -> Result {
+    fn handle_rule(&self, rule: Pair<Rule>) -> Result {
         match rule.as_rule() {
             Rule::EOI => {}
             Rule::WHITESPACE => {}
