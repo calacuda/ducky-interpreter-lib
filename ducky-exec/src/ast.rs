@@ -226,9 +226,9 @@ impl DuckyScript {
     }
 
     fn send_command(&self, cmd: Command) {
-        if let Ok(message) = serde_cbor::to_vec(&cmd) {
+        if let Ok(message) = serde_json::to_string(&cmd) {
             if let Ok(mut port) = self.port.clone().open_native() {
-                if let Err(e) = port.write_all(&message) {
+                if let Err(e) = port.write_all(&message.as_bytes()) {
                     error!("sending data over uart failed with error: {e}");
                 }
             } else {
